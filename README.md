@@ -1,3 +1,3 @@
-#rabbitmq-rpc
-ÒÀÀµµÄjava °ü fastjson-1.2.5.jar
+ï»¿#rabbitmq-rpc
+ä¾èµ–çš„java åŒ… fastjson-1.2.5.jar
 rabbitmq-client.jar
