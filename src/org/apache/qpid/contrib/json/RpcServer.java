@@ -95,7 +95,7 @@ public class RpcServer {
         Channel channel = connection.createChannel();
         channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
         // •可以运行多个服务器进程。通过channel.basicQos设置prefetchCount属性可将负载平均分配到多台服务器上。
-        channel.basicQos(1);
+        channel.basicQos(1);//设置为1，一次只接受一条消息。
         QueueingConsumer consumer = new QueueingConsumer(channel);
         // 打开应答机制=false
         channel.basicConsume(RPC_QUEUE_NAME, false, consumer);
