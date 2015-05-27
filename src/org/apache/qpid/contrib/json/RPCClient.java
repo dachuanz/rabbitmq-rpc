@@ -1,4 +1,3 @@
-
 package org.apache.qpid.contrib.json;
 
 import java.lang.reflect.InvocationHandler;
@@ -9,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -23,6 +23,7 @@ import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * @author zdc
+ * @param <T>
  * @since 2015年5月27日
  */
 public class RPCClient {
@@ -31,6 +32,7 @@ public class RPCClient {
 
     private Channel channel;
 
+    // String className;
     private String requestQueueName = "rpc_queue";
 
     private String replyQueueName;
@@ -55,6 +57,7 @@ public class RPCClient {
 
     @SuppressWarnings("unchecked")
     public <T> T createRpcClient(Class<T> interfaceClass) {
+
         if (interfaceClass == null) {
             throw new IllegalArgumentException("Interface class == null");
         }
@@ -77,8 +80,9 @@ public class RPCClient {
                     paramTypes.add(params[j].getName());
                 }
                 map.put("parameterTypes", paramTypes);
-
-                map.put("args", Arrays.asList(args));
+                if (args != null) {
+                    map.put("args", Arrays.asList(args));
+                }
                 String json = JSON.toJSONString(map);
 
                 // System.out.println(json);
@@ -91,7 +95,7 @@ public class RPCClient {
     // 发送RPC请求
     public Object call(String message) throws Exception {
         String response = null;
-        String corrId = java.util.UUID.randomUUID().toString();
+        String corrId = UUID.randomUUID().toString();
         // 发送请求消息，消息使用了两个属性：replyto和correlationId
         BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).deliveryMode(2).build();
         channel.basicPublish("", requestQueueName, props, message.getBytes());
@@ -101,6 +105,7 @@ public class RPCClient {
             // 检查它的correlationId是否是我们所要找的那个
             if (delivery.getProperties().getCorrelationId().equals(corrId)) {
                 response = new String(delivery.getBody());
+                System.out.println("[反馈]" + response);
                 break;
             }
         }
@@ -108,6 +113,8 @@ public class RPCClient {
     }
 
     public void close() throws Exception {
+        // channel.abort();
+        // channel.close();
         connection.close();
     }
 }
