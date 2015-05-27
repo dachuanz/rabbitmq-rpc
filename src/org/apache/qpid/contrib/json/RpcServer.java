@@ -93,7 +93,7 @@ public class RpcServer {
         QueueingConsumer consumer = new QueueingConsumer(channel);
         // 打开应答机制=false
         channel.basicConsume(RPC_QUEUE_NAME, true, consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
-        System.out.println(" [x] Awaiting RPC requests ");
+       // System.out.println(" [x] Awaiting RPC requests ");
         while (true) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
             BasicProperties props = delivery.getProperties();
