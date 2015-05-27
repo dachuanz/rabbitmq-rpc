@@ -33,6 +33,7 @@ public class RPCClient {
     private Channel channel;
 
     // String className;
+
     private String requestQueueName = "rpc_queue";
 
     private String replyQueueName;
@@ -77,15 +78,17 @@ public class RPCClient {
                 Class[] params = method.getParameterTypes();
 
                 for (int j = 0; j < params.length; j++) {
+                    System.out.println(params[j].getName());
                     paramTypes.add(params[j].getName());
                 }
                 map.put("parameterTypes", paramTypes);
+
                 if (args != null) {
                     map.put("args", Arrays.asList(args));
                 }
                 String json = JSON.toJSONString(map);
 
-                // System.out.println(json);
+                System.out.println(json);
 
                 return call(json);
             }
