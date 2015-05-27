@@ -1,4 +1,5 @@
 
+
 package org.apache.qpid.contrib.json;
 
 import java.lang.reflect.Method;
@@ -11,6 +12,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -95,23 +97,22 @@ public class RpcServer {
         Channel channel = connection.createChannel();
         channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
         // •可以运行多个服务器进程。通过channel.basicQos设置prefetchCount属性可将负载平均分配到多台服务器上。
-        channel.basicQos(1);//设置为1，一次只接受一条消息。
+        channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         // 打开应答机制=false
-        channel.basicConsume(RPC_QUEUE_NAME, false, consumer);
+        channel.basicConsume(RPC_QUEUE_NAME, false, consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
         System.out.println("Awaiting RPC requests " + new Date());
         while (true) {
 
             Delivery delivery = consumer.nextDelivery();
             BasicProperties props = delivery.getProperties();
-            BasicProperties replyProps = new BasicProperties.Builder()
-			.correlationId(props.getCorrelationId()).contentType("application/json").deliveryMode(2)
+            BasicProperties replyProps = new BasicProperties.Builder().correlationId(props.getCorrelationId()).contentType("application/json").deliveryMode(2)
                     .build();
             // replyProps.setContentType(contentType);
             String message = new String(delivery.getBody());
             @SuppressWarnings("rawtypes")
             Map map = (Map) JSON.parse(message);
-           // System.out.println("收到消息 " + new Date() + "~~~~" + this.hashCode());
+            System.out.println("收到消息 " + new Date() + "~~~~" + message);
             String methodName = map.get("method") + "";// service是服务器端提供服务的对象，但是，要通过获取到的调用方法的名称，参数类型，以及参数来选择对象的方法，并调用。获得方法的名称
             List parameterTypes = (List) map.get("parameterTypes");// 获得参数的类型
             List arguments = (List) map.get("args");// 获得参数
@@ -126,9 +127,14 @@ public class RpcServer {
             }
 
             Method method = obj.getClass().getMethod(methodName, classes);// 通过反射机制获得方法
-            Object result = method.invoke(obj, arguments.toArray());
-
-            String response = JSON.toJSONString(result);// 使用fastjson序列化
+            Object result = null;
+            if (arguments != null) {
+                result = method.invoke(obj, arguments.toArray());
+            } else {
+                result = method.invoke(obj);
+            }
+          // Class class1 = Class.forName(obj.getClass().getName());
+           String response = JSON.toJSONString(result,SerializerFeature.WriteClassName);// 使用fastjson序列化
             // 返回处理结果队列
             channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes());
             // 发送应答
