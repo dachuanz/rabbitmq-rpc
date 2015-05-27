@@ -22,6 +22,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 /**
+ * 使用json进行序列化，方便进行观察
  * @author zdc
  * @param <T>
  * @since 2015年5月27日
@@ -51,8 +52,9 @@ public class RPCClient {
         connection = factory.newConnection();
         channel = connection.createChannel();
         // • 注册'回调'队列，这样就可以收到RPC响应
-        replyQueueName = channel.queueDeclare().getQueue();
-        consumer = new QueueingConsumer(channel);
+        replyQueueName = channel.queueDeclare().getQueue();//生成回调队列
+        //System.out.println("[回调]" + replyQueueName);
+        consumer = new QueueingConsumer(channel);// 创建消费者
         channel.basicConsume(replyQueueName, true, consumer);
     }
 
@@ -88,7 +90,7 @@ public class RPCClient {
                 }
                 String json = JSON.toJSONString(map);
 
-                System.out.println(json);
+               // System.out.println(json);
 
                 return call(json);
             }
@@ -98,17 +100,18 @@ public class RPCClient {
     // 发送RPC请求
     public Object call(String message) throws Exception {
         String response = null;
-        String corrId = UUID.randomUUID().toString();
+        String corrId = UUID.randomUUID().toString();//未每个调用生成唯一的相关ID
+     //   System.out.println(corrId);
         // 发送请求消息，消息使用了两个属性：replyto和correlationId
-        BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).deliveryMode(2).build();
-        channel.basicPublish("", requestQueueName, props, message.getBytes());
+        BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).build();
+        channel.basicPublish("", requestQueueName, props, message.getBytes());// 将RPC请求消息发送到请求队列中
         // 等待接收结果
         while (true) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
             // 检查它的correlationId是否是我们所要找的那个
             if (delivery.getProperties().getCorrelationId().equals(corrId)) {
                 response = new String(delivery.getBody());
-                System.out.println("[反馈]" + response);
+               // System.out.println("[反馈]" + response);
                 break;
             }
         }
