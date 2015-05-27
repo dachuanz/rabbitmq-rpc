@@ -4,3 +4,4 @@ rabbitmq-client.jar
 主要思路是通过反射调用方法。
 参见
 http://www.rabbitmq.com/tutorials/tutorial-six-java.html
+目前暂不支持泛型方法和可变参数方法
