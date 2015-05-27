@@ -2,6 +2,7 @@
 package org.apache.qpid.contrib.json;
 
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 
 /**
  * @author zdc
@@ -96,18 +98,20 @@ public class RpcServer {
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         // 打开应答机制=false
-        channel.basicConsume(RPC_QUEUE_NAME, true, consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
-        System.out.println(" [x] Awaiting RPC requests ");
+        channel.basicConsume(RPC_QUEUE_NAME, false, consumer);
+        System.out.println("Awaiting RPC requests " + new Date());
         while (true) {
-            QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+
+            Delivery delivery = consumer.nextDelivery();
             BasicProperties props = delivery.getProperties();
-            BasicProperties replyProps = new BasicProperties.Builder().correlationId(props.getCorrelationId()).contentType("application/json").deliveryMode(2)
+            BasicProperties replyProps = new BasicProperties.Builder()
+			.correlationId(props.getCorrelationId()).contentType("application/json").deliveryMode(2)
                     .build();
             // replyProps.setContentType(contentType);
             String message = new String(delivery.getBody());
             @SuppressWarnings("rawtypes")
             Map map = (Map) JSON.parse(message);
-
+           // System.out.println("收到消息 " + new Date() + "~~~~" + this.hashCode());
             String methodName = map.get("method") + "";// service是服务器端提供服务的对象，但是，要通过获取到的调用方法的名称，参数类型，以及参数来选择对象的方法，并调用。获得方法的名称
             List parameterTypes = (List) map.get("parameterTypes");// 获得参数的类型
             List arguments = (List) map.get("args");// 获得参数
@@ -129,6 +133,7 @@ public class RpcServer {
             channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes());
             // 发送应答
             channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+
         }
 
     }
