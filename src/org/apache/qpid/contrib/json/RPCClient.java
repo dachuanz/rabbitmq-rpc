@@ -93,7 +93,7 @@ public class RPCClient {
         String response = null;
         String corrId = java.util.UUID.randomUUID().toString();
         // 发送请求消息，消息使用了两个属性：replyto和correlationId
-        BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).build();
+        BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).deliveryMode(2).build();
         channel.basicPublish("", requestQueueName, props, message.getBytes());
         // 等待接收结果
         while (true) {
