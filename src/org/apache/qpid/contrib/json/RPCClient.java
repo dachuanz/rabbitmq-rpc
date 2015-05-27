@@ -10,9 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.collections.map.HashedMap;
-
-import org.hibernate.mapping.Array;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import com.alibaba.fastjson.JSON;
 import com.rabbitmq.client.AMQP;
@@ -40,10 +39,11 @@ public class RPCClient {
 
     public RPCClient() throws Exception {
         // • 先建立一个连接和一个通道，并为回调声明一个唯一的'回调'队列
+        Configuration configuration = new PropertiesConfiguration("config/rabbitmq.properties");
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("hostname");
-        factory.setUsername("dachuanz");
-        factory.setPassword("dachuanz");
+        factory.setHost(configuration.getString("hostname"));
+        factory.setUsername(configuration.getString("username"));
+        factory.setPassword(configuration.getString("password"));
         factory.setPort(AMQP.PROTOCOL.PORT);
         connection = factory.newConnection();
         channel = connection.createChannel();
@@ -65,21 +65,23 @@ public class RPCClient {
         return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class<?>[] { interfaceClass }, new InvocationHandler() {
 
             Map map = new HashMap();
+
             List paramTypes = new ArrayList();
+
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 map.put("method", method.getName());
                 Class[] params = method.getParameterTypes();
-               
+
                 for (int j = 0; j < params.length; j++) {
-                    paramTypes .add(params[j].getName());
+                    paramTypes.add(params[j].getName());
                 }
-                map.put("parameterTypes",  paramTypes );
-               
-                map.put("args",  Arrays.asList(args));
+                map.put("parameterTypes", paramTypes);
+
+                map.put("args", Arrays.asList(args));
                 String json = JSON.toJSONString(map);
 
-              // System.out.println(json);
+                // System.out.println(json);
 
                 return call(json);
             }
