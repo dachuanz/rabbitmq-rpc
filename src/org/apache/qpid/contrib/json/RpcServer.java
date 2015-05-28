@@ -117,7 +117,7 @@ public class RpcServer {
         QueueingConsumer consumer = new QueueingConsumer(channel);
         // 打开应答机制=false
         channel.basicConsume(RPC_QUEUE_NAME, false, consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
-       // System.out.println("Awaiting RPC requests " + new Date());
+        // System.out.println("Awaiting RPC requests " + new Date());
         while (true) {
             Delivery delivery = consumer.nextDelivery();
             BasicProperties props = delivery.getProperties();
@@ -127,11 +127,11 @@ public class RpcServer {
                 String message = new String(delivery.getBody());
                 @SuppressWarnings("rawtypes")
                 Map map = (Map) JSON.parse(message);
-               // System.out.println("收到消息 " + new Date() + "~~~~" + message);
+                System.out.println("收到消息 " + new Date() + "~~~~" + message);
                 String methodName = map.get("method") + "";// service是服务器端提供服务的对象，但是，要通过获取到的调用方法的名称，参数类型，以及参数来选择对象的方法，并调用。获得方法的名称
-                List parameterTypes = (List) map.get("parameterTypes");// 获得参数的类型
-                List arguments = (List) map.get("args");// 获得参数
-                Class[] classes = new Class[parameterTypes.size()];
+                List<?> parameterTypes = (List<?>) map.get("parameterTypes");// 获得参数的类型
+                List<?> arguments = (List<?>) map.get("args");// 获得参数
+                Class<?>[] classes = new Class[parameterTypes.size()];
                 for (int j = 0; j < parameterTypes.size(); j++) {
                     if (primitiveClazz.get(parameterTypes.get(j) + "") != null) {
 
@@ -156,7 +156,7 @@ public class RpcServer {
             // 返回处理结果队列
             channel.basicPublish("", props.getReplyTo(), replyProps, response.getBytes());
             // 发送应答
-            channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);//终结消息
+            channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);// 终结消息
 
         }
 
