@@ -22,7 +22,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 /**
- * 使用json进行序列化，方便进行观察
+ * 使用json进行序列化，方便进行观察调试
  * @author zdc
  * @param <T>
  * @since 2015年5月27日
