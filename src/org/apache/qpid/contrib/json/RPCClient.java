@@ -90,7 +90,7 @@ public class RPCClient {
                 if (args != null) {
                     map.put("args", Arrays.asList(args));
                 }
-                String json = JSON.toJSONString(map, SerializerFeature.WriteClassName);
+                String json = JSON.toJSONString(map, SerializerFeature.WriteClassName);//带类型，主要作用是支持泛型
 
                 System.out.println(json);
 
