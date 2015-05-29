@@ -1,7 +1,5 @@
 package org.apache.qpid.contrib.json;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
@@ -9,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
@@ -19,10 +17,8 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * @author zdc
@@ -46,6 +42,8 @@ public class RpcServer {
     private Class<?> serviceAPI;
 
     private Object serviceImpl;
+
+    private boolean isCompress;
 
     public void createRpcService(Object obj) {
         this.serviceImpl = obj;
@@ -98,36 +96,42 @@ public class RpcServer {
         return null;
     }
 
-    public RpcServer(Object obj) throws ConfigurationException, IOException, ShutdownSignalException, ConsumerCancelledException, InterruptedException,
-            ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        // • 先建立连接、通道，并声明队列
+    public RpcServer(Object obj) throws Exception {
+        // 先建立连接、通道，并声明队列
         Object result = null;
         Configuration configuration = new PropertiesConfiguration("config/rabbitmq.properties");
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(configuration.getString("hostname"));
         factory.setUsername(configuration.getString("username"));
         factory.setPassword(configuration.getString("password"));
+        this.isCompress = configuration.getBoolean("isCompress");
         factory.setPort(AMQP.PROTOCOL.PORT);
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
         // channel.queueDelete(RPC_QUEUE_NAME);//某些情况下删除
         channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
-        // •可以运行多个服务器进程。通过channel.basicQos设置prefetchCount属性可将负载平均分配到多台服务器上。
+        // 可以运行多个服务器进程。通过channel.basicQos设置prefetchCount属性可将负载平均分配到多台服务器上。
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         // 打开应答机制=false
         channel.basicConsume(RPC_QUEUE_NAME, false, consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
-        // System.out.println("Awaiting RPC requests " + new Date());
+        System.out.println("Awaiting RPC requests " + new Date());
         while (true) {
             Delivery delivery = consumer.nextDelivery();
             BasicProperties props = delivery.getProperties();
             BasicProperties replyProps = new BasicProperties.Builder().correlationId(props.getCorrelationId()).contentType("application/json").deliveryMode(2)
                     .build();
             try {
-                String message = new String(delivery.getBody());
+                String message;
+               // byte[] s = null;
+                if (isCompress) {
+                    message = new String(BZip2Utils.decompress(delivery.getBody()));
+                } else {
+                    message = new String(delivery.getBody());
+                }
                 @SuppressWarnings("rawtypes")
                 Map map = (Map) JSON.parse(message);
-                System.out.println("收到消息 " + new Date() + "~~~~" + message);
+                // System.out.println("收到消息 " + new Date() + "~~~~" + s);
                 String methodName = map.get("method") + "";// service是服务器端提供服务的对象，但是，要通过获取到的调用方法的名称，参数类型，以及参数来选择对象的方法，并调用。获得方法的名称
                 List<?> parameterTypes = (List<?>) map.get("parameterTypes");// 获得参数的类型
                 List<?> arguments = (List<?>) map.get("args");// 获得参数
