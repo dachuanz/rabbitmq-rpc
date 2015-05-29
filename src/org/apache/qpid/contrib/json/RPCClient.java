@@ -44,7 +44,7 @@ public class RPCClient {
     private QueueingConsumer consumer;
 
     public RPCClient() throws Exception {
-        // • 先建立一个连接和一个通道，并为回调声明一个唯一的'回调'队列
+        // 先建立一个连接和一个通道，并为回调声明一个唯一的'回调'队列
         Configuration configuration = new PropertiesConfiguration("config/rabbitmq.properties");
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(configuration.getString("hostname"));
@@ -53,7 +53,7 @@ public class RPCClient {
         factory.setPort(AMQP.PROTOCOL.PORT);
         connection = factory.newConnection();
         channel = connection.createChannel();
-        // • 注册'回调'队列，这样就可以收到RPC响应
+        //  注册'回调'队列，这样就可以收到RPC响应
         replyQueueName = channel.queueDeclare().getQueue();// 生成回调队列
         // System.out.println("[回调]" + replyQueueName);
         consumer = new QueueingConsumer(channel);// 创建消费者
@@ -102,7 +102,7 @@ public class RPCClient {
     // 发送RPC请求
     public Object call(String message, Method method) throws Exception {
         String response = null;
-        String corrId = UUID.randomUUID().toString();// 未每个调用生成唯一的相关ID
+        String corrId = UUID.randomUUID().toString();// 为每个调用生成唯一的相关ID
         // System.out.println(corrId);
         // 发送请求消息，消息使用了两个属性：replyto和correlationId
         BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).build();
