@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
@@ -35,6 +36,8 @@ public class RPCClient {
 
     private Channel channel;
 
+    boolean isCompress;
+
     // String className;
 
     private String requestQueueName = "rpc_queue";
@@ -44,16 +47,17 @@ public class RPCClient {
     private QueueingConsumer consumer;
 
     public RPCClient() throws Exception {
-        // 先建立一个连接和一个通道，并为回调声明一个唯一的'回调'队列
+        //  先建立一个连接和一个通道，并为回调声明一个唯一的'回调'队列
         Configuration configuration = new PropertiesConfiguration("config/rabbitmq.properties");
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(configuration.getString("hostname"));
         factory.setUsername(configuration.getString("username"));
         factory.setPassword(configuration.getString("password"));
+        this.isCompress = configuration.getBoolean("isCompress");
         factory.setPort(AMQP.PROTOCOL.PORT);
         connection = factory.newConnection();
         channel = connection.createChannel();
-        //  注册'回调'队列，这样就可以收到RPC响应
+        // 注册'回调'队列，这样就可以收到RPC响应
         replyQueueName = channel.queueDeclare().getQueue();// 生成回调队列
         // System.out.println("[回调]" + replyQueueName);
         consumer = new QueueingConsumer(channel);// 创建消费者
@@ -90,7 +94,7 @@ public class RPCClient {
                 if (args != null) {
                     map.put("args", Arrays.asList(args));
                 }
-                String json = JSON.toJSONString(map, SerializerFeature.WriteClassName);//带类型，主要作用是支持泛型
+                String json = JSON.toJSONString(map, SerializerFeature.WriteClassName);
 
                 System.out.println(json);
 
@@ -105,8 +109,19 @@ public class RPCClient {
         String corrId = UUID.randomUUID().toString();// 为每个调用生成唯一的相关ID
         // System.out.println(corrId);
         // 发送请求消息，消息使用了两个属性：replyto和correlationId
+        byte[] s = null;
+        if (isCompress) {
+           // System.out.println("压缩前长度" + message.getBytes().length);
+
+            s = BZip2Utils.compress(message.getBytes());
+
+            //System.out.println("压缩后长度" + s.length);
+        } else {
+            s = message.getBytes();
+        }
+
         BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).build();
-        channel.basicPublish("", requestQueueName, props, message.getBytes());// 将RPC请求消息发送到请求队列中
+        channel.basicPublish("", requestQueueName, props, s);// 将RPC请求消息发送到请求队列中
         // 等待接收结果
         while (true) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
