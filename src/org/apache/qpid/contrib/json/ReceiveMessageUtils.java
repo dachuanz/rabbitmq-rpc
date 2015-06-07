@@ -66,13 +66,13 @@ public class ReceiveMessageUtils {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();// 得到消息传输信息
             String message = new String(delivery.getBody());
 
-            System.out.println(" [x] Received '" + message + "'");
+           // System.out.println(" [x] Received '" + message + "'");
             if (clazz != null) {
                 eventProcesser.process(JSON.parseObject(message, clazz));
             } else {
                 eventProcesser.process(JSON.parse(message));
             }
-            System.out.println(" [x] Done");
+           // System.out.println(" [x] Done");
 
             channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);// 下一个消息
         }
