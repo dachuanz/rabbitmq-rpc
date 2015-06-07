@@ -53,7 +53,7 @@ public class ReceiveMessageUtils {
 		channel.basicQos(1);// 告诉RabbitMQ同一时间给一个消息给消费者
 		/*
 		 * We're about to tell the server to deliver us the messages from the
-		 * queue. 21. * Since it will push us messages asynchronously, 22. * we
+		 * queue. * Since it will push us messages asynchronously, * we
 		 * provide a callback in the form of an object that will buffer the
 		 * messages * until we're ready to use them. That is what
 		 * QueueingConsumer does.
@@ -61,7 +61,7 @@ public class ReceiveMessageUtils {
 		QueueingConsumer consumer = new QueueingConsumer(channel);
 		/*
 		 * 名字为TASK_QUEUE_NAME的Channel的值回调给QueueingConsumer,即使一个worker在处理消息的过程中停止了
-		 * ，这个消息也不会失效 27.
+		 * ，这个消息也不会失效 
 		 */
 		channel.basicConsume(queueName, false, consumer);
 
@@ -85,18 +85,16 @@ public class ReceiveMessageUtils {
 			} else {
 				eventProcesser.process(JSON.parse(message));
 			}
-			// System.out.println(" [x] Done");
+			
 
 			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);// 下一个消息
 		}
 
-		// retur;
-
+		
 	}
 
 	public void close() throws Exception {
-		// channel.abort();
-		// channel.close();
+		
 		connection.close();
 	}
 }
