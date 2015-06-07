@@ -1,4 +1,3 @@
-
 package org.apache.qpid.contrib.json;
 
 import java.io.IOException;
@@ -49,7 +48,7 @@ public class ReceiveMessageUtils {
         connection = factory.newConnection();
         channel = connection.createChannel();
         channel.queueDeclare(queueName, true, false, false, null);
-        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+        //System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
         channel.basicQos(1);// 告诉RabbitMQ同一时间给一个消息给消费者
         /*
