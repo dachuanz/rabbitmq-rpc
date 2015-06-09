@@ -7,10 +7,8 @@ import org.apache.qpid.contrib.json.processer.EventProcesser;
 import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
 import com.alibaba.fastjson.JSON;
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 /**
@@ -29,9 +27,9 @@ public class ReceiveMessageUtils {
 	 * @param queueName
 	 *            队列名称
 	 * @param eventProcesser
-	 *            事件名称
+	 *            处理事件实例
 	 * @param clazz
-	 *            要接收的消息类型
+	 *            要接收的消息类型 
 	 * @throws Exception
 	 */
 	public void receiveMessage(String queueName, EventProcesser eventProcesser,
@@ -39,13 +37,9 @@ public class ReceiveMessageUtils {
 
 		Configuration configuration = new PropertiesConfiguration(
 				"config/rabbitmq.properties");
-		ConnectionFactory factory = new ConnectionFactory();
-		factory.setHost(configuration.getString("hostname"));
-		factory.setUsername(configuration.getString("username"));
-		factory.setPassword(configuration.getString("password"));
-		factory.setPort(AMQP.PROTOCOL.PORT);
+		
 		this.isCompress = configuration.getBoolean("isCompress");
-		connection = factory.newConnection();
+		
 		channel = connection.createChannel();
 		channel.queueDeclare(queueName, true, false, false, null);
 		// System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
@@ -53,15 +47,14 @@ public class ReceiveMessageUtils {
 		channel.basicQos(1);// 告诉RabbitMQ同一时间给一个消息给消费者
 		/*
 		 * We're about to tell the server to deliver us the messages from the
-		 * queue. * Since it will push us messages asynchronously, * we
-		 * provide a callback in the form of an object that will buffer the
-		 * messages * until we're ready to use them. That is what
-		 * QueueingConsumer does.
+		 * queue. * Since it will push us messages asynchronously, * we provide
+		 * a callback in the form of an object that will buffer the messages *
+		 * until we're ready to use them. That is what QueueingConsumer does.
 		 */
 		QueueingConsumer consumer = new QueueingConsumer(channel);
 		/*
 		 * 名字为TASK_QUEUE_NAME的Channel的值回调给QueueingConsumer,即使一个worker在处理消息的过程中停止了
-		 * ，这个消息也不会失效 
+		 * ，这个消息也不会失效
 		 */
 		channel.basicConsume(queueName, false, consumer);
 
@@ -78,23 +71,26 @@ public class ReceiveMessageUtils {
 				s = delivery.getBody();
 			}
 			String message = new String(s);
-
-			logger.debug("  Received '" + message + "'");
+ 
+			logger.debug("[Received]" + message + "'");
 			if (clazz != null) {
-				eventProcesser.process(JSON.parseObject(message, clazz));
+				eventProcesser.process(JSON.parseObject(message,clazz));
 			} else {
 				eventProcesser.process(JSON.parse(message));
 			}
-			
 
 			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);// 下一个消息
 		}
 
-		
+	}
+
+	public ReceiveMessageUtils(Connection connection) {
+		super();
+		this.connection = connection;
 	}
 
 	public void close() throws Exception {
-		
+
 		connection.close();
 	}
 }

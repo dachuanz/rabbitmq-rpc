@@ -13,34 +13,33 @@ import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
 /**
- * @author zdc
+ * @author 张大川
  * @since 2015年5月27日
  */
 public class RPCServer {
 
 	private static RPCServer instance;
 	final static Logger logger = Logger.getLogger(RPCServer.class);
+	private Connection connection;
 
-	public synchronized static RPCServer getInstance(Object obj)
-			throws Exception {
+	public synchronized static RPCServer getInstance(Object obj,
+			Connection connection) throws Exception {
 		if (null == instance) {
 
-			instance = new RPCServer(obj);
+			instance = new RPCServer(obj, connection);
 
 		}
 		return instance;
 	}
 
-	//private static final String RPC_QUEUE_NAME = "rpc_queue";
+	// private static final String RPC_QUEUE_NAME = "rpc_queue";
 
 	// private Class<?> serviceAPI;
 
@@ -82,27 +81,30 @@ public class RPCServer {
 
 	}
 
-	public RPCServer(Object obj) throws Exception {
+	public RPCServer(Object obj, Connection connection) throws Exception {
 		// 先建立连接、通道，并声明队列
 		Object result = null;
 		Configuration configuration = new PropertiesConfiguration(
 				"config/rabbitmq.properties");
-		ConnectionFactory factory = new ConnectionFactory();
-		factory.setHost(configuration.getString("hostname"));
-		factory.setUsername(configuration.getString("username"));
-		factory.setPassword(configuration.getString("password"));
 		this.isCompress = configuration.getBoolean("isCompress");
-		
-		factory.setPort(AMQP.PROTOCOL.PORT);
-		Connection connection = factory.newConnection();
-		Channel channel = connection.createChannel();
+		// ConnectionFactory factory = new ConnectionFactory();
+		// factory.setHost(configuration.getString("hostname"));
+		// factory.setUsername(configuration.getString("username"));
+		// factory.setPassword(configuration.getString("password"));
+		//
+		//
+		// factory.setPort(AMQP.PROTOCOL.PORT);
+		this.connection = connection;
+		Channel channel = this.connection.createChannel();
 		// channel.queueDelete(RPC_QUEUE_NAME);//某些情况下删除
-		channel.queueDeclare(configuration.getString("rpc_queue"), false, false, false, null);
+		channel.queueDeclare(configuration.getString("rpc_queue"), false,
+				false, false, null);
 		// 可以运行多个服务器进程。通过channel.basicQos设置prefetchCount属性可将负载平均分配到多台服务器上。
 		channel.basicQos(1);
 		QueueingConsumer consumer = new QueueingConsumer(channel);
 		// 打开应答机制=false
-		channel.basicConsume(configuration.getString("rpc_queue"), false, consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
+		channel.basicConsume(configuration.getString("rpc_queue"), false,
+				consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
 		logger.info("Awaiting RPC requests " + new Date());
 		while (true) {
 			Delivery delivery = consumer.nextDelivery();
