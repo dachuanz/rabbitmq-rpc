@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.contrib.json.utils.BZip2Utils;
@@ -43,7 +44,7 @@ public class RPCServer {
 
 	// private Class<?> serviceAPI;
 
-	private boolean isCompress;
+	private boolean isCompress=false;
 
 	public static void main(String[] args) {
 
@@ -86,14 +87,10 @@ public class RPCServer {
 		Object result = null;
 		Configuration configuration = new PropertiesConfiguration(
 				"config/rabbitmq.properties");
-		this.isCompress = configuration.getBoolean("isCompress");
-		// ConnectionFactory factory = new ConnectionFactory();
-		// factory.setHost(configuration.getString("hostname"));
-		// factory.setUsername(configuration.getString("username"));
-		// factory.setPassword(configuration.getString("password"));
-		//
-		//
-		// factory.setPort(AMQP.PROTOCOL.PORT);
+		if (configuration.containsKey("isCompress"))
+		{
+			this.isCompress = configuration.getBoolean("isCompress");
+		}
 		this.connection = connection;
 		Channel channel = this.connection.createChannel();
 		// channel.queueDelete(RPC_QUEUE_NAME);//某些情况下删除

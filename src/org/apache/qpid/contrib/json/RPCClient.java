@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
@@ -54,8 +55,19 @@ public class RPCClient {
 		factory.setHost(configuration.getString("hostname"));
 		factory.setUsername(configuration.getString("username"));
 		factory.setPassword(configuration.getString("password"));
-		this.isCompress = configuration.getBoolean("isCompress");
-		factory.setPort(AMQP.PROTOCOL.PORT);
+
+		if (configuration.containsKey("isCompress"))
+		{
+			this.isCompress = configuration.getBoolean("isCompress");
+		}
+		// factory.setPort(AMQP.PROTOCOL.PORT);
+		if (configuration.containsKey("port"))
+		{
+		factory.setPort(configuration.getInt("port"));
+		}
+		else {
+			factory.setPort(AMQP.PROTOCOL.PORT);
+		}
 		connection = factory.newConnection();
 		channel = connection.createChannel();
 		// 注册'回调'队列，这样就可以收到RPC响应

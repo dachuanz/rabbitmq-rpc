@@ -1,6 +1,7 @@
 
 package org.apache.qpid.contrib.json;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.contrib.json.example.TestJson;
 
 /**
@@ -8,7 +9,9 @@ import org.apache.qpid.contrib.json.example.TestJson;
  * @since 2015年5月27日
  */
 public class RPCMain {
-
+	static {
+        PropertyConfigurator.configure("config/log4j.properties");
+    }
     public static void main(String[] args) throws Exception {
         RPCClient rpcClient = new RPCClient();
         System.out.println(" ");

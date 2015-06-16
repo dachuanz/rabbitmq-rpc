@@ -1,6 +1,7 @@
 package org.apache.qpid.contrib.json;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.contrib.json.processer.EventProcesser;
@@ -20,7 +21,7 @@ public class ReceiveMessageUtils {
 	private Channel channel;
 
 	private Connection connection;
-	boolean isCompress;
+	boolean isCompress=false;
 
 	/**
 	 * 
@@ -38,8 +39,10 @@ public class ReceiveMessageUtils {
 		Configuration configuration = new PropertiesConfiguration(
 				"config/rabbitmq.properties");
 		
-		this.isCompress = configuration.getBoolean("isCompress");
-		
+		if (configuration.containsKey("isCompress"))
+		{
+			this.isCompress = configuration.getBoolean("isCompress");
+		} 
 		channel = connection.createChannel();
 		channel.queueDeclare(queueName, true, false, false, null);
 		// System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
