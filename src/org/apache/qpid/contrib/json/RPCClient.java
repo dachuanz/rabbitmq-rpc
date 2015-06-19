@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
@@ -38,7 +37,10 @@ public class RPCClient {
 	private Channel channel;
 
 	boolean isCompress;
-
+/**
+ * 
+ */
+	int timeout = 5000;
 	// String className;
 
 	// private String requestQueueName = "rpc_queue";
@@ -55,17 +57,16 @@ public class RPCClient {
 		factory.setHost(configuration.getString("hostname"));
 		factory.setUsername(configuration.getString("username"));
 		factory.setPassword(configuration.getString("password"));
-
-		if (configuration.containsKey("isCompress"))
-		{
+		if (configuration.containsKey("timeout")) {
+			this.timeout = configuration.getInt("timeout");
+		}
+		if (configuration.containsKey("isCompress")) {
 			this.isCompress = configuration.getBoolean("isCompress");
 		}
-		// factory.setPort(AMQP.PROTOCOL.PORT);
-		if (configuration.containsKey("port"))
-		{
-		factory.setPort(configuration.getInt("port"));
-		}
-		else {
+
+		if (configuration.containsKey("port")) {
+			factory.setPort(configuration.getInt("port"));
+		} else {
 			factory.setPort(AMQP.PROTOCOL.PORT);
 		}
 		connection = factory.newConnection();
@@ -91,18 +92,21 @@ public class RPCClient {
 		return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(),
 				new Class<?>[] { interfaceClass }, new InvocationHandler() {
 
+					@SuppressWarnings("rawtypes")
 					Map map = new HashMap();
 
+					@SuppressWarnings("rawtypes")
 					List paramTypes = new ArrayList();
 
 					@Override
 					public Object invoke(Object proxy, Method method,
 							Object[] args) throws Throwable {
 						map.put("method", method.getName());
+						@SuppressWarnings("rawtypes")
 						Class[] params = method.getParameterTypes();
 
 						for (int j = 0; j < params.length; j++) {
-							System.out.println(params[j].getName());
+
 							paramTypes.add(params[j].getName());
 						}
 						map.put("parameterTypes", paramTypes);
@@ -122,15 +126,13 @@ public class RPCClient {
 	public Object call(String message, Method method) throws Exception {
 		String response = null;
 		String corrId = UUID.randomUUID().toString();// 为每个调用生成唯一的相关ID
-		// System.out.println(corrId);
+
 		// 发送请求消息，消息使用了两个属性：replyto和correlationId
 		byte[] s = null;
 		if (isCompress) {
-			// System.out.println("压缩前长度" + message.getBytes().length);
 
 			s = BZip2Utils.compress(message.getBytes());
 
-			// System.out.println("压缩后长度" + s.length);
 		} else {
 			s = message.getBytes();
 		}
@@ -140,11 +142,11 @@ public class RPCClient {
 		channel.basicPublish("", configuration.getString("rpc_queue"), props, s);// 将RPC请求消息发送到请求队列中
 		// 等待接收结果
 		while (true) {
-			QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+			QueueingConsumer.Delivery delivery = consumer.nextDelivery(timeout);
 			// 检查它的correlationId是否是我们所要找的那个
 			if (delivery.getProperties().getCorrelationId().equals(corrId)) {
 				response = new String(delivery.getBody());
-				// System.out.println("[反馈]" + response);
+
 				break;
 			}
 		}
@@ -152,8 +154,7 @@ public class RPCClient {
 	}
 
 	public void close() throws Exception {
-		// channel.abort();
-		// channel.close();
+
 		connection.close();
 	}
 }

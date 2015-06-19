@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.contrib.json.utils.BZip2Utils;
@@ -44,7 +43,7 @@ public class RPCServer {
 
 	// private Class<?> serviceAPI;
 
-	private boolean isCompress=false;
+	private boolean isCompress = false;
 
 	public static void main(String[] args) {
 
@@ -87,8 +86,7 @@ public class RPCServer {
 		Object result = null;
 		Configuration configuration = new PropertiesConfiguration(
 				"config/rabbitmq.properties");
-		if (configuration.containsKey("isCompress"))
-		{
+		if (configuration.containsKey("isCompress")) {
 			this.isCompress = configuration.getBoolean("isCompress");
 		}
 		this.connection = connection;
@@ -100,7 +98,7 @@ public class RPCServer {
 		channel.basicQos(1);
 		QueueingConsumer consumer = new QueueingConsumer(channel);
 		// 打开应答机制=false
-		channel.basicConsume(configuration.getString("rpc_queue"), false,
+		channel.basicConsume(configuration.getString("rpc_queue"),false,
 				consumer);// 第二个参数，自动确认设置为true,即使rpc失败，也能略过这个请求。
 		logger.info("Awaiting RPC requests " + new Date());
 		while (true) {
@@ -138,22 +136,27 @@ public class RPCServer {
 				Method method = obj.getClass().getMethod(methodName, classes);// 通过反射机制获得方法
 
 				if (arguments != null) {
-					result = method.invoke(obj, arguments.toArray());
+					result = method.invoke(obj, arguments.toArray());// 方法调用
 				} else {
 					result = method.invoke(obj);
 				}
 			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			}
-			// Class class1 = Class.forName(obj.getClass().getName());
-			String response = JSON.toJSONString(result,
-					SerializerFeature.WriteClassName);// 使用fastjson序列化
-			// 返回处理结果队列
-			channel.basicPublish("", props.getReplyTo(), replyProps,
-					response.getBytes());
-			// 发送应答
-			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);// 终结消息
+				logger.error(e);
 
+			} catch (Exception e) {
+				logger.error(e);
+			}
+			
+		
+
+				String response = JSON.toJSONString(result,
+						SerializerFeature.WriteClassName);// 使用fastjson序列化
+				// 返回处理结果队列
+				channel.basicPublish("", props.getReplyTo(), replyProps,
+						response.getBytes());
+				// 发送应答
+				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);// 终结消息
+			
 		}
 
 	}

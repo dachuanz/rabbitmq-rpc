@@ -16,8 +16,8 @@ public class RPCMain {
         RPCClient rpcClient = new RPCClient();
         System.out.println(" ");
         TestJson json = rpcClient.createRpcClient(org.apache.qpid.contrib.json.example.TestJson.class);
-
-        System.out.println(" [.] Got '" + json.getJson(15) + "'");
+        System.out.println("x222");
+        System.out.println(" [.] Got '" + json.gettest(4,0) + "'");
         rpcClient.close();
     }
 }
