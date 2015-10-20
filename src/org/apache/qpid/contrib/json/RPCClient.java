@@ -37,9 +37,9 @@ public class RPCClient {
 	private Channel channel;
 
 	boolean isCompress;
-/**
- * 
- */
+	/**
+	* 
+	*/
 	int timeout = 5000;
 	// String className;
 
@@ -51,8 +51,7 @@ public class RPCClient {
 
 	public RPCClient() throws Exception {
 		// 先建立一个连接和一个通道，并为回调声明一个唯一的'回调'队列
-		this.configuration = new PropertiesConfiguration(
-				"config/rabbitmq.properties");
+		this.configuration = new PropertiesConfiguration("config/rabbitmq.properties");
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setHost(configuration.getString("hostname"));
 		factory.setUsername(configuration.getString("username"));
@@ -85,12 +84,11 @@ public class RPCClient {
 			throw new IllegalArgumentException("Interface class == null");
 		}
 		if (!interfaceClass.isInterface()) {
-			throw new IllegalArgumentException("The "
-					+ interfaceClass.getName() + " must be interface class!");
+			throw new IllegalArgumentException("The " + interfaceClass.getName() + " must be interface class!");
 		}
 
-		return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(),
-				new Class<?>[] { interfaceClass }, new InvocationHandler() {
+		return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class<?>[] { interfaceClass },
+				new InvocationHandler() {
 
 					@SuppressWarnings("rawtypes")
 					Map map = new HashMap();
@@ -99,8 +97,7 @@ public class RPCClient {
 					List paramTypes = new ArrayList();
 
 					@Override
-					public Object invoke(Object proxy, Method method,
-							Object[] args) throws Throwable {
+					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 						map.put("method", method.getName());
 						@SuppressWarnings("rawtypes")
 						Class[] params = method.getParameterTypes();
@@ -114,8 +111,7 @@ public class RPCClient {
 						if (args != null) {
 							map.put("args", Arrays.asList(args));
 						}
-						String json = JSON.toJSONString(map,
-								SerializerFeature.WriteClassName);
+						String json = JSON.toJSONString(map, SerializerFeature.WriteClassName);
 
 						return call(json, method);
 					}
@@ -137,8 +133,14 @@ public class RPCClient {
 			s = message.getBytes();
 		}
 
-		BasicProperties props = new BasicProperties.Builder()
-				.correlationId(corrId).replyTo(replyQueueName).build();
+		BasicProperties props = new BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).build();
+		/**
+		 * 获取消费者数量,如果消费者数量为0，则说明没有找到服务端
+		 * 
+		 */
+		int i = channel.queueDeclare(configuration.getString("rpc_queue"), false, false, false, null)
+				.getConsumerCount();
+		System.out.println(i);
 		channel.basicPublish("", configuration.getString("rpc_queue"), props, s);// 将RPC请求消息发送到请求队列中
 		// 等待接收结果
 		while (true) {
