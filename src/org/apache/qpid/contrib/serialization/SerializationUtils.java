@@ -35,7 +35,7 @@ public class SerializationUtils {
 	}
 
 	/**
-	 * 
+	 * 反序列化
 	 * @param bytes
 	 * @return
 	 */
