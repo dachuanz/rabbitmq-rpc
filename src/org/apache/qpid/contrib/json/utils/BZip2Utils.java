@@ -13,6 +13,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 /**
+ * bzip 压缩比更高
  * @author zdc
  * @since 2015年5月28日
  */
