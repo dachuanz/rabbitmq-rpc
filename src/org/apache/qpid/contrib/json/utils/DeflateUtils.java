@@ -10,6 +10,9 @@ import java.io.OutputStream;
 
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorOutputStream;
+
+import org.apache.commons.compress.compressors.deflate.DeflateParameters;
+
 /**
  * 
  * @author zdc52
@@ -21,7 +24,7 @@ public class DeflateUtils {
 	public static final CharSequence EXT = ".zip";
 
 	/**
-	 * 数据压缩
+	 * 
 	 * 
 	 * @param data
 	 * @return
@@ -31,7 +34,6 @@ public class DeflateUtils {
 		ByteArrayInputStream bais = new ByteArrayInputStream(data);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-		/* 压缩 */
 		compress(bais, baos);
 
 		byte[] output = baos.toByteArray();
@@ -45,7 +47,7 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 文件压缩
+	 * 
 	 * 
 	 * @param file
 	 * @throws Exception
@@ -55,11 +57,11 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 文件压缩
+	 * 
 	 * 
 	 * @param file
 	 * @param delete
-	 *            是否删除原始文件
+	 * 
 	 * @throws Exception
 	 */
 	public static void compress(File file, boolean delete) throws Exception {
@@ -78,15 +80,17 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 数据压缩
+	 *
+	 * 压缩
 	 * 
 	 * @param is
 	 * @param os
 	 * @throws Exception
 	 */
 	public static void compress(InputStream is, OutputStream os) throws Exception {
-
-		DeflateCompressorOutputStream gos = new DeflateCompressorOutputStream(os);
+		DeflateParameters deflateParameters = new DeflateParameters();
+		deflateParameters.setCompressionLevel(9);
+		DeflateCompressorOutputStream gos = new DeflateCompressorOutputStream(os, deflateParameters);
 
 		int count;
 		byte data[] = new byte[BUFFER];
@@ -95,13 +99,12 @@ public class DeflateUtils {
 		}
 
 		gos.finish();
-
 		gos.flush();
 		gos.close();
 	}
 
 	/**
-	 * 文件压缩
+	 * 
 	 * 
 	 * @param path
 	 * @throws Exception
@@ -111,11 +114,11 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 文件压缩
+	 * 
 	 * 
 	 * @param path
 	 * @param delete
-	 *            是否删除原始文件
+	 * 
 	 * @throws Exception
 	 */
 	public static void compress(String path, boolean delete) throws Exception {
@@ -124,7 +127,7 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 数据解压缩
+	 * 
 	 * 
 	 * @param data
 	 * @return
@@ -133,8 +136,6 @@ public class DeflateUtils {
 	public static byte[] decompress(byte[] data) throws Exception {
 		ByteArrayInputStream bais = new ByteArrayInputStream(data);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-		/* 解压缩 */
 
 		decompress(bais, baos);
 
@@ -149,7 +150,7 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 文件解压缩
+	 * 
 	 * 
 	 * @param file
 	 * @throws Exception
@@ -159,11 +160,11 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 文件解压缩
+	 * 
 	 * 
 	 * @param file
 	 * @param delete
-	 *            是否删除原始文件
+	 * 
 	 * @throws Exception
 	 */
 	public static void decompress(File file, boolean delete) throws Exception {
@@ -180,15 +181,16 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 数据解压缩
+	 * 
 	 * 
 	 * @param is
 	 * @param os
 	 * @throws Exception
 	 */
 	public static void decompress(InputStream is, OutputStream os) throws Exception {
-
-		DeflateCompressorInputStream gis = new DeflateCompressorInputStream(is);
+		DeflateParameters deflateParameters = new DeflateParameters();
+		deflateParameters.setCompressionLevel(9);
+		DeflateCompressorInputStream gis = new DeflateCompressorInputStream(is, deflateParameters);
 
 		int count;
 		byte data[] = new byte[BUFFER];
@@ -200,7 +202,7 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 文件解压缩
+	 * 
 	 * 
 	 * @param path
 	 * @throws Exception
@@ -210,11 +212,11 @@ public class DeflateUtils {
 	}
 
 	/**
-	 * 文件解压缩
+	 * 
 	 * 
 	 * @param path
 	 * @param delete
-	 *            是否删除原始文件
+	 * 
 	 * @throws Exception
 	 */
 	public static void decompress(String path, boolean delete) throws Exception {
