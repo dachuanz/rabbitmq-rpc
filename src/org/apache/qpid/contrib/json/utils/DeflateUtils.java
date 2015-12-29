@@ -1,4 +1,4 @@
-package net.oschina.dachuan;
+package org.apache.qpid.contrib.json.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,7 +14,7 @@ import org.apache.commons.compress.compressors.deflate.DeflateCompressorOutputSt
 public class DeflateUtils {
 	public static final int BUFFER = 1024;
 
-    public static final CharSequence EXT = ".bz2";
+    public static final CharSequence EXT = ".zip";
 
     /**
      * Êý¾ÝÑ¹Ëõ

@@ -1,4 +1,3 @@
-
 package org.apache.qpid.contrib.json.utils;
 
 import java.io.ByteArrayInputStream;
@@ -19,7 +18,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
  */
 public class BZip2Utils {
 
-    public static final int BUFFER = 1024;
+    public static final int BUFFER = 1024*8;
 
     public static final CharSequence EXT = ".bz2";
 
