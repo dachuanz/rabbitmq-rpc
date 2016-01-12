@@ -10,7 +10,7 @@ import com.caucho.hessian.io.Hessian2Output;
 
 /**
  * 
- * @author 
+ * @author  张大川
  *
  */
 public class SerializationUtils {
