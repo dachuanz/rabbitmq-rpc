@@ -15,7 +15,7 @@ import org.apache.commons.compress.compressors.deflate.DeflateParameters;
 
 /**
  * 
- * @author zdc52
+ * @author 
  *
  */
 public class DeflateUtils {
@@ -81,8 +81,8 @@ public class DeflateUtils {
 
 	/**
 	 *
-	 * Ñ¹Ëõ
-	 * 
+	 * åŽ‹ç¼©	
+ * 
 	 * @param is
 	 * @param os
 	 * @throws Exception
