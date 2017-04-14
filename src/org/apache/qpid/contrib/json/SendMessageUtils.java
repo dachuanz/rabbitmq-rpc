@@ -19,7 +19,7 @@ import com.rabbitmq.client.MessageProperties;
 /**
  * 
  * @author 张大川
- *
+ * ampq 4.0 改造
  */
 public class SendMessageUtils {
 
