@@ -1,28 +1,31 @@
 package org.apache.qpid.contrib.json;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConversionException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.log4j.Logger;
+import java.io.IOException;
+
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.FileBasedConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.qpid.contrib.json.processer.EventProcesser;
-import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
 import com.alibaba.fastjson.JSON;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 
-/**
-   接收消息
- * @author 张大川
- * @since 2015年5月28日
- */
 public class ReceiveMessageUtils {
-	final static Logger logger = Logger.getLogger(ReceiveMessageUtils.class);
+
 	private Channel channel;
 
 	private Connection connection;
-	boolean isCompress=false;
+	boolean isCompress = false;
+
+	
 
 	/**
 	 * 
@@ -31,60 +34,41 @@ public class ReceiveMessageUtils {
 	 * @param eventProcesser
 	 *            处理事件实例
 	 * @param clazz
-	 *            要接收的消息类型 
+	 *            要接收的消息类型
 	 * @throws Exception
 	 */
-	public void receiveMessage(String queueName, EventProcesser eventProcesser,
-			Class<?> clazz) throws Exception {
-
-		Configuration configuration = new PropertiesConfiguration(
-				"config/rabbitmq.properties");
+	public void receiveMessage(String queueName, EventProcesser eventProcesser, Class<?> clazz) throws Exception {
+		setConfig(null);
 		
-		if (configuration.containsKey("isCompress"))
-		{
-			this.isCompress = configuration.getBoolean("isCompress");
-		} 
+		
+
+		
 		channel = connection.createChannel();
 		channel.queueDeclare(queueName, true, false, false, null);
-		// System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+		// System.out.println(" [*] Waiting for messages. To exit press
+		// CTRL+C");
 
 		channel.basicQos(1);// 告诉RabbitMQ同一时间给一个消息给消费者
-		/*
-		 * We're about to tell the server to deliver us the messages from the
-		 * queue. * Since it will push us messages asynchronously, * we provide
-		 * a callback in the form of an object that will buffer the messages *
-		 * until we're ready to use them. That is what QueueingConsumer does.
-		 */
-		QueueingConsumer consumer = new QueueingConsumer(channel);
-		/*
-		 * 名字为TASK_QUEUE_NAME的Channel的值回调给QueueingConsumer,即使一个worker在处理消息的过程中停止了
-		 * ，这个消息也不会失效
-		 */
-		channel.basicConsume(queueName, false, consumer);
+		
+		Consumer consumer = new DefaultConsumer(channel) {
+			@Override
+			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
+					byte[] body) throws IOException {
+			
+			
 
-		while (true) {
-			QueueingConsumer.Delivery delivery = consumer.nextDelivery();// 得到消息传输信息
-			byte[] s = null;
-			if (isCompress) {
-				// System.out.println("压缩前长度" + message.getBytes().length);
+				String message = new String(body);
+				
+				if (clazz != null) {
+					eventProcesser.process(JSON.parseObject(message, clazz));
+				} else {
+					eventProcesser.process(JSON.parse(message));
+				}
 
-				s = BZip2Utils.decompress(delivery.getBody());
-
-				// System.out.println("压缩后长度" + s.length);
-			} else {
-				s = delivery.getBody();
 			}
-			String message = new String(s);
- 
-			logger.debug("[Received]" + message + "'");
-			if (clazz != null) {
-				eventProcesser.process(JSON.parseObject(message,clazz));
-			} else {
-				eventProcesser.process(JSON.parse(message));
-			}
+		};
 
-			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);// 下一个消息
-		}
+		channel.basicConsume(queueName, true, consumer);
 
 	}
 
@@ -97,4 +81,6 @@ public class ReceiveMessageUtils {
 
 		connection.close();
 	}
+
+	
 }
