@@ -13,7 +13,8 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 
 /**
- * @author zdc
+   接收消息
+ * @author 张大川
  * @since 2015年5月28日
  */
 public class ReceiveMessageUtils {
