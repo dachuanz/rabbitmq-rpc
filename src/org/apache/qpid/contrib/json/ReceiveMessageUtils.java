@@ -11,7 +11,10 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+/**
 
+接收消息方法
+*/
 public class ReceiveMessageUtils {
 
 	private Channel channel;
