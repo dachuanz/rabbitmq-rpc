@@ -6,7 +6,6 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.apache.qpid.contrib.json.utils.BZip2Utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
@@ -19,7 +18,7 @@ import com.rabbitmq.client.MessageProperties;
 /**
  * 
  * @author 张大川
- * ampq 4.0 改造
+ *
  */
 public class SendMessageUtils {
 
@@ -34,7 +33,7 @@ public class SendMessageUtils {
 	 */
 	public static void sendMessage(String queueName, Object... object) throws Exception {
 		Configuration config = null;
-		boolean isCompress = false;
+
 		Parameters params = new Parameters();
 		FileBasedConfigurationBuilder<FileBasedConfiguration> builder = new FileBasedConfigurationBuilder<FileBasedConfiguration>(
 				PropertiesConfiguration.class).configure(params.properties().setFileName("rabbitmq.properties"));
@@ -49,10 +48,8 @@ public class SendMessageUtils {
 		factory.setHost(config.getString("hostname"));
 		factory.setUsername(config.getString("username"));
 		factory.setPassword(config.getString("password"));
-		factory.useNio();
-		if (config.containsKey("isCompress")) {
-			isCompress = config.getBoolean("isCompress");
-		}
+		 factory.useNio();
+
 		if (config.containsKey("port")) {
 			factory.setPort(config.getInt("port"));
 		} else {
@@ -69,14 +66,8 @@ public class SendMessageUtils {
 		for (Object object2 : messages) {
 			jsonMessage = JSON.toJSONString(object2, SerializerFeature.WriteClassName);
 
-			if (isCompress) {
-				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-						BZip2Utils.compress(jsonMessage.getBytes()));
-			} // 持久化消息
+			channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN, jsonMessage.getBytes());
 
-			else {
-				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN, jsonMessage.getBytes());
-			}
 		}
 
 		channel.close();
