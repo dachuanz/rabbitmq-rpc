@@ -23,7 +23,7 @@ public class ReceiveMessageUtils {
 	private Channel channel;
 
 	private Connection connection;
-	boolean isCompress = false;
+	
 
 	
 
