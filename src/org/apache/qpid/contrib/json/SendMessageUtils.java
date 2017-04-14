@@ -7,13 +7,13 @@ import org.apache.qpid.contrib.json.utils.BZip2Utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
 /**
- * @author zdc
+ * @author 张大川
  * @since 2015年5月28日
  */
 public class SendMessageUtils {
@@ -36,6 +36,7 @@ public class SendMessageUtils {
 		factory.setHost(configuration.getString("hostname"));
 		factory.setUsername(configuration.getString("username"));
 		factory.setPassword(configuration.getString("password"));
+		factory.useNio();
 		if (configuration.containsKey("isCompress"))// 验证
 		{
 			isCompress = configuration.getBoolean("isCompress");
@@ -45,8 +46,7 @@ public class SendMessageUtils {
 		} else {
 			factory.setPort(AMQP.PROTOCOL.PORT);
 		}
-		BasicProperties basicProps = new BasicProperties.Builder()
-				.deliveryMode(2).build();
+		
 		Connection connection = factory.newConnection();
 		Channel channel = connection.createChannel();
 		// 声明此队列并且持久化
@@ -60,12 +60,12 @@ public class SendMessageUtils {
 			// System.out.println(jsonMessage);
 
 			if (isCompress) {
-				channel.basicPublish("", queueName, basicProps,
+				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
 						BZip2Utils.compress(jsonMessage.getBytes()));
 			}// 持久化消息
 
 			else {
-				channel.basicPublish("", queueName, basicProps,
+				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
 						jsonMessage.getBytes());
 			}
 		}
