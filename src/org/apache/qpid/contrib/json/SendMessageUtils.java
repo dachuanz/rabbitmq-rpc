@@ -48,7 +48,7 @@ public class SendMessageUtils {
 		factory.setHost(config.getString("hostname"));
 		factory.setUsername(config.getString("username"));
 		factory.setPassword(config.getString("password"));
-		 factory.useNio();
+		factory.useNio();
 
 		if (config.containsKey("port")) {
 			factory.setPort(config.getInt("port"));
