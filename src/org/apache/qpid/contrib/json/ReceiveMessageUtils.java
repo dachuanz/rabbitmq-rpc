@@ -11,19 +11,23 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-/**
 
-接收消息方法
-*/
+/**
+ * 
+ * 接受消息方法
+ * 
+ * @author 张大川
+ *
+ */
 public class ReceiveMessageUtils {
 
 	private Channel channel;
 
 	private Connection connection;
 
-
 	/**
 	 * 
+	 * @param <T>
 	 * @param queueName
 	 *            队列名称
 	 * @param eventProcesser
@@ -32,12 +36,11 @@ public class ReceiveMessageUtils {
 	 *            要接收的消息类型
 	 * @throws Exception
 	 */
-	public void receiveMessage(String queueName, EventProcesser eventProcesser, Class<?> clazz) throws Exception {
+	public <T> void receiveMessage(String queueName, EventProcesser<T> eventProcesser, Class<T> clazz)
+			throws Exception {
 
 		channel = connection.createChannel();
 		channel.queueDeclare(queueName, true, false, false, null);
-		// System.out.println(" [*] Waiting for messages. To exit press
-		// CTRL+C");
 
 		channel.basicQos(1);// 告诉RabbitMQ同一时间给一个消息给消费者
 
@@ -47,17 +50,24 @@ public class ReceiveMessageUtils {
 					byte[] body) throws IOException {
 
 				String message = new String(body);
-
+				boolean b = false;
 				if (clazz != null) {
-					eventProcesser.process(JSON.parseObject(message, clazz));
-				} else {
-					eventProcesser.process(JSON.parse(message));
-				}
+					eventProcesser.process((T) JSON.parseObject(message, clazz));
 
+				} else {
+					Object parse = JSON.parse(message);
+					eventProcesser.process((T) parse);
+				}
+				b = eventProcesser.end();
+				if (b) {
+					channel.basicAck(envelope.getDeliveryTag(), false);
+				} else {
+					channel.basicNack(envelope.getDeliveryTag(), false, true);
+				}
 			}
 		};
 
-		channel.basicConsume(queueName, true, consumer);
+		channel.basicConsume(queueName, consumer);
 
 	}
 
