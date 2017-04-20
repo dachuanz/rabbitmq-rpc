@@ -42,7 +42,7 @@ public class ReceiveMessageUtils {
 		channel = connection.createChannel();
 		channel.queueDeclare(queueName, true, false, false, null);
 
-		channel.basicQos(1);// 告诉RabbitMQ同一时间给一个消息给消费者
+		channel.basicQos(1);// 一次只接收一个消息
 
 		Consumer consumer = new DefaultConsumer(channel) {
 			@Override
@@ -50,6 +50,7 @@ public class ReceiveMessageUtils {
 					byte[] body) throws IOException {
 
 				String message = new String(body);
+				// System.out.println(consumerTag);
 				boolean b = false;
 				if (clazz != null) {
 					eventProcesser.process((T) JSON.parseObject(message, clazz));
@@ -60,9 +61,10 @@ public class ReceiveMessageUtils {
 				}
 				b = eventProcesser.end();
 				if (b) {
-					channel.basicAck(envelope.getDeliveryTag(), false);
+					channel.basicAck(envelope.getDeliveryTag(), false); // 发送确认
 				} else {
-					channel.basicNack(envelope.getDeliveryTag(), false, true);
+					channel.basicNack(envelope.getDeliveryTag(), false, true);// 消息处理失败，消息返回队列
+
 				}
 			}
 		};
