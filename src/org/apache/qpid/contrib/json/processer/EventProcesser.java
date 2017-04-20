@@ -1,11 +1,11 @@
-
 package org.apache.qpid.contrib.json.processer;
 
-/**
- * @author zdc
- * @since 2015年5月28日
- */
-public interface EventProcesser {
+public interface EventProcesser<T> {
 
-    void process(Object e);
+    void process(T e) ;
+    
+    void  next(T t);
+    boolean end();
+
+	
 }
